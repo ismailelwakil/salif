@@ -1,0 +1,16 @@
+name: Preview QA
+on:
+  deployment_status:
+jobs:
+  probes:
+    name: qa-probes
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Preview'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe the preview deployment
+        env:
+          BASE_URL: ${{ github.event.deployment_status.environment_url }}
+        run: bash scripts/qa-probes.sh

@@ -1,0 +1,34 @@
+name: Production deploy
+on:
+  push:
+    tags: ['v*']
+jobs:
+  deploy:
+    name: production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Push migrations to production
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push
+      - name: Record release in Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then echo "Sentry token not set; skipping release."; exit 0; fi
+          curl -fsS -X POST "https://de.sentry.io/api/0/organizations/${SENTRY_ORG}/releases/" \
+            -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"version\":\"${GITHUB_REF_NAME}\",\"projects\":[\"${SENTRY_PROJECT}\"]}" \
+            || echo "Sentry release call failed (non-blocking)."

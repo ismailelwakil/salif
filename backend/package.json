@@ -1,0 +1,16 @@
+{
+  "name": "salif-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "سلف API — secrets stay in the environment, never in the browser",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.22.3"
+  }
+}
